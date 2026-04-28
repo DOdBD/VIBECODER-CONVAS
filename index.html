@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeCoder Canvas — by Dimitri Op de Beeck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1814;
+  --ink-soft: #6b6760;
+  --ink-faint: #b8b5b0;
+  --paper: #f5f2ed;
+  --paper-warm: #ede9e2;
+  --paper-card: #faf8f5;
+  --accent: #c8440a;
+  --accent-soft: #f0e0d6;
+  --warn: #8a6200;
+  --warn-bg: #fdf3dc;
+  --success: #2d6a3f;
+  --success-bg: #e8f5ed;
+  --border: rgba(26,24,20,0.12);
+  --border-strong: rgba(26,24,20,0.22);
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Geist', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* — Header — */
+.site-header {
+  padding: 2.5rem 3rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo-block {}
+.logo-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.logo-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 32px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.logo-name span { color: var(--accent); font-style: italic; }
+
+.header-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-top: 8px;
+}
+.meta-input {
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--paper-card);
+  color: var(--ink);
+  width: 148px;
+  outline: none;
+}
+.meta-input::placeholder { color: var(--ink-faint); }
+.meta-input:focus { border-color: var(--ink-soft); }
+
+/* — Intro — */
+.intro {
+  max-width: 1200px;
+  margin: 1.5rem auto 1.75rem;
+  padding: 0 3rem;
+  display: flex;
+  align-items: baseline;
+  gap: 2rem;
+}
+.intro-text {
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 480px;
+  line-height: 1.65;
+}
+.intro-text strong { color: var(--ink); font-weight: 500; }
+
+/* — Canvas — */
+.canvas-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 3rem;
+}
+
+.canvas {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--paper-card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.row {
+  display: grid;
+  border-bottom: 0.5px solid var(--border);
+}
+.row:last-child { border-bottom: none; }
+.r1 { grid-template-columns: 1fr 1.7fr 1fr; }
+.r2 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.r3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.cell {
+  padding: 18px 20px 20px;
+  border-right: 0.5px solid var(--border);
+  cursor: pointer;
+  min-height: 160px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.14s;
+}
+.cell:last-child { border-right: none; }
+.cell:hover { background: var(--paper-warm); }
+.cell.done { background: var(--success-bg); }
+.cell.is-security { background: var(--warn-bg); }
+.cell.is-security:hover { background: #fbedc8; }
+.cell.is-security.done { background: var(--success-bg); }
+
+.cell-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+.cell-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-top: 1px;
+}
+.cell-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  flex: 1;
+  margin-top: 3px;
+}
+.cell-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  letter-spacing: 0.02em;
+}
+.cell-badge {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #ffe8a0;
+  color: var(--warn);
+  display: inline-block;
+  width: fit-content;
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+.cell-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  border: 1.5px solid var(--success);
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.cell-check svg {
+  width: 9px; height: 9px;
+  stroke: var(--success); fill: none; stroke-width: 2.5;
+}
+.cell.done .cell-check { display: flex; }
+
+/* hover arrow */
+.cell::after {
+  content: '→';
+  position: absolute;
+  bottom: 13px;
+  left: 20px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 0.12s, transform 0.12s;
+  transform: translateX(-4px);
+}
+.cell:hover::after { opacity: 1; transform: translateX(0); }
+.cell.done::after { display: none; }
+
+/* — Footer bar — */
+.footer-bar {
+  max-width: 1200px;
+  margin: 1.25rem auto 0;
+  padding: 0 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.progress-block { display: flex; align-items: center; gap: 12px; }
+.progress-track {
+  width: 160px; height: 2px;
+  background: var(--border-strong);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+.progress-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.generate-btn {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 20px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: opacity 0.14s, transform 0.1s;
+}
+.generate-btn:hover { opacity: 0.85; }
+.generate-btn:active { transform: scale(0.98); }
+
+/* — Output — */
+.output-section {
+  max-width: 1200px;
+  margin: 2rem auto 0;
+  padding: 0 3rem 3rem;
+  display: none;
+}
+.output-section.show { display: block; }
+
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.output-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px;
+  color: var(--ink);
+}
+.output-hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.tab {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 5px 12px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: transparent;
+  color: var(--ink-soft);
+  transition: all 0.12s;
+}
+.tab:hover { background: var(--paper-warm); color: var(--ink); }
+.tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.out-box {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  background: var(--ink);
+  color: #e8e4dc;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.out-box::-webkit-scrollbar { width: 4px; }
+.out-box::-webkit-scrollbar-track { background: transparent; }
+.out-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+.copy-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.copy-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 5px 14px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.copy-btn:hover { background: var(--paper-warm); color: var(--ink); }
+
+/* — Byline — */
+.byline {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 3rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.byline-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+.byline-text a { color: var(--ink-faint); text-decoration: none; }
+.byline-text a:hover { color: var(--ink-soft); }
+
+/* — Modal — */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,0.4);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-bg.open { display: flex; }
+
+.modal {
+  background: var(--paper-card);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+  animation: modal-in 0.18s ease;
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+.modal-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  color: var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.modal-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+.modal-default-note {
+  font-size: 11px;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 0.5px solid rgba(138,98,0,0.2);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  line-height: 1.55;
+  display: none;
+}
+.modal textarea {
+  width: 100%;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  padding: 12px 14px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.65;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.modal textarea:focus { border-color: var(--ink); }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 1rem;
+}
+.btn-cancel {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  padding: 7px 16px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.btn-cancel:hover { background: var(--paper-warm); color: var(--ink); }
+.btn-save {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.btn-save:hover { opacity: 0.82; }
+
+/* — divider line in canvas — */
+.canvas-section-label {
+  padding: 6px 20px;
+  background: var(--paper-warm);
+  border-bottom: 0.5px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo-block">
+    <div class="logo-eyebrow">structured context for ai-assisted development</div>
+    <div class="logo-name">VibeCoder <span>Canvas</span></div>
+  </div>
+  <div class="header-meta">
+    <input class="meta-input" id="m-project" placeholder="Project name" />
+    <input class="meta-input" id="m-by" placeholder="Built by" />
+  </div>
+</header>
+
+<div class="intro">
+  <p class="intro-text">Fill in the 7 blocks below. Each block answers one question your AI needs to build your app correctly — every session. Hit <strong>Generate</strong> to export ready-to-paste context files.</p>
+</div>
+
+<div class="canvas-wrap">
+  <div class="canvas">
+
+    <div class="canvas-section-label">Core</div>
+    <div class="row r1">
+      <div class="cell" data-key="problem" onclick="openBlock('problem')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">01 · 01_PROJECT.md</div>
+        <div class="cell-title">The problem</div>
+        <div class="cell-desc" id="pv-problem">What's broken today? Why does this need to exist?</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell" data-key="solution" onclick="openBlock('solution')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">02 · 01_PROJECT.md</div>
+        <div class="cell-title">The solution</div>
+        <div class="cell-desc" id="pv-solution">Name, tagline, 2–3 sentences on what it does.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell" data-key="user" onclick="openBlock('user')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">03 · 03_USERS.md</div>
+        <div class="cell-title">The user</div>
+        <div class="cell-desc" id="pv-user">One real person. Job, frustration, tech level.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+    </div>
+
+    <div class="row r2">
+      <div class="cell" data-key="features" onclick="openBlock('features')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">04 · 04_FEATURES.md</div>
+        <div class="cell-title">Features</div>
+        <div class="cell-desc" id="pv-features">3–5 things v1 must do.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell" data-key="outofscope" onclick="openBlock('outofscope')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">04b · 04_FEATURES.md</div>
+        <div class="cell-title">Out of scope</div>
+        <div class="cell-desc" id="pv-outofscope">What must the AI never build?</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell" data-key="stack" onclick="openBlock('stack')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">05 · 05_STACK.md</div>
+        <div class="cell-title">The stack</div>
+        <div class="cell-desc" id="pv-stack">Frontend, backend, DB, auth, AI. Locked.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell" data-key="design" onclick="openBlock('design')">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">06 · 06_DESIGN.md</div>
+        <div class="cell-title">Design</div>
+        <div class="cell-desc" id="pv-design">Colors, font, feel, naming conventions.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+    </div>
+
+    <div class="canvas-section-label">Goals &amp; constraints</div>
+    <div class="row r3">
+      <div class="cell" data-key="goals" onclick="openBlock('goals')" style="min-height:120px">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">02b · 02_GOALS.md</div>
+        <div class="cell-title">Goals</div>
+        <div class="cell-desc" id="pv-goals">Success in 3 months — be specific.</div>
+        <div class="cell-tag">↗ click to fill</div>
+      </div>
+      <div class="cell is-security" data-key="rules" onclick="openBlock('rules')" style="min-height:120px">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">07 · 07_RULES.md</div>
+        <div class="cell-title">AI rules</div>
+        <div class="cell-desc" id="pv-rules">How must the AI behave?</div>
+        <div class="cell-badge">defaults pre-filled</div>
+        <div class="cell-tag">↗ click to edit</div>
+      </div>
+      <div class="cell is-security" data-key="security" onclick="openBlock('security')" style="min-height:120px">
+        <div class="cell-check"><svg viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1"/></svg></div>
+        <div class="cell-num">08 · 07_RULES.md</div>
+        <div class="cell-title">Security</div>
+        <div class="cell-desc" id="pv-security">Sensitive data, auth rules, compliance.</div>
+        <div class="cell-badge">defaults pre-filled</div>
+        <div class="cell-tag">↗ click to edit</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-bar">
+  <div class="progress-block">
+    <div class="progress-track"><div class="progress-fill" id="prog"></div></div>
+    <span class="progress-label" id="prog-label">0 / 7 filled</span>
+  </div>
+  <button class="generate-btn" onclick="generate()">Generate context files →</button>
+</div>
+
+<div class="output-section" id="output-section">
+  <div class="output-header">
+    <div class="output-title">Your context files</div>
+    <div class="output-hint">Paste each file into your AI at the start of every session</div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="out-box" id="out-box"></div>
+  <div class="copy-row">
+    <button class="copy-btn" onclick="copyOut()">Copy file</button>
+  </div>
+</div>
+
+<div class="byline">
+  <span class="byline-text">VibeCoder Canvas · by <a href="https://www.linkedin.com/in/dimitriopdebeeck/" target="_blank" style="display:inline-flex;align-items:center;gap:5px;text-decoration:none;color:var(--ink-faint);">Dimitri Op de Beeck <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a></span>
+  <span class="byline-text">Don't just vibe. Build smart.</span>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="closeBg(event)">
+  <div class="modal">
+    <div class="modal-num" id="m-num"></div>
+    <div class="modal-title" id="m-title"></div>
+    <div class="modal-hint" id="m-hint"></div>
+    <div class="modal-default-note" id="m-note"></div>
+    <textarea id="m-input"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveBlock()">Save block</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {
+  rules: `- Write complete files — never snippets or placeholders
+- One function, one job — keep functions under 30 lines
+- No TODOs, no commented-out code, no dead code in final output
+- Never refactor code outside the current task
+- If something is unclear, ask one focused question before proceeding
+- State every unspecified decision you make, in one sentence
+- When only part of a file changed, show only the diff — not the full file`,
+  security: `- Never expose API keys, tokens, or secrets client-side
+- Always validate and sanitise user input before processing
+- Never store sensitive data in localStorage or sessionStorage
+- Always check authentication before returning any user data
+- Apply least-privilege: users can only access their own data
+- Never log sensitive user data to the console
+- Use environment variables for all credentials`
+};
+
+const BLOCKS = {
+  problem:    { num: '01 · 01_PROJECT.md', title: 'The problem',    hint: 'What\'s broken or missing today? What pain does this solve? One clear problem statement — no solutions yet.', hasDefault: false },
+  solution:   { num: '02 · 01_PROJECT.md', title: 'The solution',   hint: 'What does the app do? Include the name, tagline, and 2–3 declarative sentences about what it actually does.', hasDefault: false },
+  goals:      { num: '02b · 02_GOALS.md',  title: 'Goals',          hint: 'What does success look like in 3 months? Be specific: "50 paying users", "saves 2 hours/week". Also note what failure looks like.', hasDefault: false },
+  user:       { num: '03 · 03_USERS.md',   title: 'The user',       hint: 'Describe your primary user as a real person: job, age range, biggest frustration, tech level, how they access the app.', hasDefault: false },
+  features:   { num: '04 · 04_FEATURES.md',title: 'Features',       hint: 'List the 3–5 things v1 must do. Number them. One line each. Be ruthless — every extra feature is complexity the AI has to manage.', hasDefault: false },
+  outofscope: { num: '04b · 04_FEATURES.md',title:'Out of scope',   hint: 'What must the AI never build? List features, patterns, or behaviours that are explicitly forbidden. This prevents scope creep.', hasDefault: false },
+  stack:      { num: '05 · 05_STACK.md',   title: 'The stack',      hint: 'Frontend, backend, database, auth, hosting, AI/LLM. Be specific — e.g. "React + Firebase + Firestore + Firebase Auth + Gemini". This is locked — no alternatives.', hasDefault: false },
+  design:     { num: '06 · 06_DESIGN.md',  title: 'Design',         hint: 'Brand colors (hex if possible), font, visual feel (e.g. clean/minimal), and naming conventions — e.g. "clients" not "users", "session" not "appointment".', hasDefault: false },
+  rules:      { num: '07 · 07_RULES.md',   title: 'AI rules',       hint: 'Add your project-specific rules below. The defaults cover clean code basics — edit or extend them.', hasDefault: true, defaultKey: 'rules', note: 'These defaults apply to every vibe-coded project. Edit or extend — don\'t delete unless you have a reason.' },
+  security:   { num: '08 · 07_RULES.md',   title: 'Security',       hint: 'Describe what data is sensitive in your app, who can see whose data, and any compliance needs (GDPR, HIPAA, etc.). The security defaults are pre-filled — add project-specific rules below.', hasDefault: true, defaultKey: 'security', note: 'These security defaults prevent the most common vibe-coding vulnerabilities. Add project-specific rules below.' }
+};
+
+const CORE = ['problem','solution','user','features','stack','design','rules'];
+
+const FILES = {
+  '01_PROJECT.md': d => `# PROJECT BRIEF
+# Load at the start of every AI session.
+
+## What we are building
+${d.solution || '[not filled]'}
+
+## Why it exists
+${d.problem || '[not filled]'}`,
+
+  '02_GOALS.md': d => `# GOALS
+# Load at the start of every AI session.
+
+## Success criteria (3 months)
+${d.goals || '[not filled]'}`,
+
+  '03_USERS.md': d => `# USERS
+# Load at the start of every AI session.
+
+## Primary user profile
+${d.user || '[not filled]'}`,
+
+  '04_FEATURES.md': d => `# FEATURES
+# Load at the start of every AI session.
+
+## Core features (v1 scope)
+${d.features || '[not filled]'}
+
+## Explicitly out of scope — do not build these
+${d.outofscope || '[not filled]'}`,
+
+  '05_STACK.md': d => `# TECH STACK
+# Load at the start of every AI session.
+# This stack is locked. Do not suggest alternatives. Do not deviate.
+
+## Stack
+${d.stack || '[not filled]'}`,
+
+  '06_DESIGN.md': d => `# DESIGN & IDENTITY
+# Load at the start of every AI session.
+
+## Brand & design
+${d.design || '[not filled]'}`,
+
+  '07_RULES.md': d => `# RULES FOR THE AI
+# Load at the start of every AI session.
+# These rules are non-negotiable.
+
+## Behaviour rules
+${d.rules || DEFAULTS.rules}
+
+## Security & code quality rules
+${d.security || DEFAULTS.security}
+
+## Stack rules
+- Use only the stack defined in 05_STACK.md. Never suggest alternatives.
+- If the stack has a gap, ask one question to clarify — don't assume.
+
+## Scope rules
+- Build only what is defined in 04_FEATURES.md.
+- Do not add features that weren't asked for.
+- Do not refactor code unrelated to the current task.`
+};
+
+let data = {};
+let cur = null;
+let activeFile = '01_PROJECT.md';
+
+function openBlock(key) {
+  cur = key;
+  const b = BLOCKS[key];
+  document.getElementById('m-num').textContent = b.num;
+  document.getElementById('m-title').textContent = b.title;
+  document.getElementById('m-hint').textContent = b.hint;
+  const note = document.getElementById('m-note');
+  if (b.hasDefault) {
+    note.textContent = b.note;
+    note.style.display = 'block';
+    if (!data[key]) data[key] = DEFAULTS[b.defaultKey];
+  } else {
+    note.style.display = 'none';
+  }
+  document.getElementById('m-input').value = data[key] || '';
+  document.getElementById('modal-bg').classList.add('open');
+  setTimeout(() => document.getElementById('m-input').focus(), 60);
+}
+
+function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); cur = null; }
+
+function saveBlock() {
+  const val = document.getElementById('m-input').value.trim();
+  if (!cur) return;
+  data[cur] = val;
+  const pv = document.getElementById('pv-' + cur);
+  if (pv) pv.textContent = val ? (val.length > 90 ? val.slice(0, 90) + '…' : val) : BLOCKS[cur].hint.split('.')[0] + '.';
+  const cell = document.querySelector(`[data-key="${cur}"]`);
+  if (cell) cell.classList.toggle('done', !!val);
+  updateProgress();
+  closeModal();
+}
+
+function updateProgress() {
+  const filled = CORE.filter(k => data[k] && data[k].trim()).length;
+  document.getElementById('prog').style.width = (filled / 7 * 100) + '%';
+  document.getElementById('prog-label').textContent = filled + ' / 7 filled';
+}
+
+function generate() {
+  const fkeys = Object.keys(FILES);
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  fkeys.forEach((f, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i === 0 ? ' active' : '');
+    btn.textContent = f;
+    btn.onclick = () => showFile(f, btn);
+    tabsEl.appendChild(btn);
+  });
+  showFile(fkeys[0], tabsEl.children[0]);
+  const sec = document.getElementById('output-section');
+  sec.classList.add('show');
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showFile(fname, btn) {
+  activeFile = fname;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('out-box').textContent = FILES[fname](data);
+}
+
+function copyOut() {
+  navigator.clipboard.writeText(document.getElementById('out-box').textContent).then(() => {
+    const b = document.querySelector('.copy-btn');
+    b.textContent = 'Copied ✓';
+    setTimeout(() => b.textContent = 'Copy file', 1500);
+  });
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
